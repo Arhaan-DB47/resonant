@@ -23,6 +23,8 @@ from backend.utils.logger import logger
 
 # Import route modules
 from backend.routes import health
+from backend.routes import process
+from backend.routes import personas
 
 
 # --- Lifespan Event Handler ---
@@ -79,10 +81,10 @@ app.add_middleware(
 # include_router() wires them into the main app.
 
 app.include_router(health.router)
+app.include_router(process.router)
+app.include_router(personas.router)
 
-# These will be added as we build them in later weeks:
-# app.include_router(process.router)
-# app.include_router(personas.router)
+# Will be added later:
 # app.include_router(conversations.router)
 
 
