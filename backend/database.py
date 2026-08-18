@@ -18,7 +18,13 @@ load_dotenv()
 
 # Read the database URL from .env
 # Format: postgresql://username:password@host:port/database_name
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres123@localhost:5432/resonant")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL is not set! "
+        "Create a .env file with DATABASE_URL=postgresql://user:password@localhost:5432/resonant"
+    )
 
 # Create the SQLAlchemy engine
 # - The engine manages the actual database connection pool

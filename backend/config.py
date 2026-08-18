@@ -27,8 +27,8 @@ class Settings(BaseSettings):
 
     # === Database ===
     database_url: str = Field(
-        default="postgresql://postgres:postgres123@localhost:5432/resonant",
-        description="PostgreSQL connection string",
+        default="",
+        description="PostgreSQL connection string (set in .env)",
     )
 
     # === Colab-Hosted AI Services ===
