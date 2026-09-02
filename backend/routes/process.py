@@ -6,18 +6,23 @@ POST /api/process
 This is the HEART of Resonant. It orchestrates the full pipeline:
     Audio In -> STT -> RAG -> LLM -> TTS -> Audio Out
 
-Week 2: STT is now LIVE (faster-whisper)
+Week 2: STT is LIVE (faster-whisper)
+Week 3: LLM is LIVE (Ollama via Colab, with fallback mode)
 Remaining stubs:
-    Week 3: LLM (Ollama via Colab)
     Week 4: TTS (gTTS / Coqui XTTS)
     Week 5: RAG (ChromaDB)
 """
 
 import time
 
-from fastapi import APIRouter, UploadFile, Form, HTTPException
+from fastapi import APIRouter, UploadFile, Form, HTTPException, Depends
+from sqlalchemy.orm import Session
 from backend.models.schemas import ProcessResponse, ErrorResponse
+from backend.models.db_models import Persona
+from backend.database import get_db
 from backend.services.stt_service import stt_service
+from backend.services.llm_service import llm_service
+from backend.prompts.prompt_loader import build_system_prompt
 from backend.utils.audio_utils import save_upload, convert_to_wav, cleanup_temp_files
 from backend.utils.logger import logger
 
@@ -33,6 +38,7 @@ async def process_audio(
     audio: UploadFile,
     target_language: str = Form(default="en"),
     persona_id: int = Form(default=1),
+    db: Session = Depends(get_db),
 ):
     """
     The main pipeline endpoint.
@@ -75,13 +81,36 @@ async def process_audio(
         context_chunks = []
         logger.info(f"  Stage 3 - RAG: skipped (not connected yet)")
 
-        # === STAGE 4: LLM Persona Response ===
-        # TODO Week 3: reply_text = llm_service.generate(system_prompt, transcript)
-        reply_text = (
-            f"[LLM not connected yet] You said: '{transcript}'. "
-            f"This is a stub response for persona {persona_id} in {target_language}."
+        # === STAGE 4: LLM Persona Response === [LIVE - Week 3]
+        # Load persona from database
+        persona = db.query(Persona).filter(Persona.id == persona_id).first()
+        if not persona:
+            logger.warning(f"Persona {persona_id} not found, using default response")
+            reply_text = f"[Persona {persona_id} not found] You said: '{transcript}'"
+            llm_mode = "error"
+            llm_time = 0.0
+        else:
+            # Build the system prompt from persona data + template
+            system_prompt = build_system_prompt(
+                persona=persona,
+                target_language=detected_lang,
+                context_chunks=context_chunks if context_chunks else None,
+            )
+
+            # Call the LLM (Ollama or fallback)
+            llm_result = llm_service.generate(
+                system_prompt=system_prompt,
+                user_message=transcript,
+            )
+
+            reply_text = llm_result["reply"]
+            llm_mode = llm_result["mode"]
+            llm_time = llm_result["duration_ms"]
+
+        logger.info(
+            f"  Stage 4 - LLM: mode={llm_mode}, time={llm_time:.0f}ms, "
+            f"reply='{reply_text[:60]}'"
         )
-        logger.info(f"  Stage 4 - LLM: stub response")
 
         # === STAGE 5: Text-to-Speech ===
         # TODO Week 4: audio_path = tts_service.synthesize(reply_text, target_language)
