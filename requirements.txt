@@ -18,6 +18,7 @@ alembic>=1.13.0                    # Database migrations
 
 # Audio Processing
 pydub>=0.25.1                      # Format conversion (requires ffmpeg)
+audioop-lts>=0.2.2                 # Python 3.13+ compatibility shim for pydub
 
 # Text-to-Speech (lightweight, runs on CPU)
 gTTS>=2.5.0                        # Free fallback TTS (no cloning)
