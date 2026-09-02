@@ -8,8 +8,9 @@ This is the HEART of Resonant. It orchestrates the full pipeline:
 
 Week 2: STT is LIVE (faster-whisper)
 Week 3: LLM is LIVE (Ollama via Colab, with fallback mode)
+Week 4: TTS is LIVE (gTTS local, Coqui XTTS on Colab)
+         Conversations saved to PostgreSQL
 Remaining stubs:
-    Week 4: TTS (gTTS / Coqui XTTS)
     Week 5: RAG (ChromaDB)
 """
 
@@ -18,10 +19,11 @@ import time
 from fastapi import APIRouter, UploadFile, Form, HTTPException, Depends
 from sqlalchemy.orm import Session
 from backend.models.schemas import ProcessResponse, ErrorResponse
-from backend.models.db_models import Persona
+from backend.models.db_models import Persona, Conversation
 from backend.database import get_db
 from backend.services.stt_service import stt_service
 from backend.services.llm_service import llm_service
+from backend.services.tts_service import tts_service
 from backend.prompts.prompt_loader import build_system_prompt
 from backend.utils.audio_utils import save_upload, convert_to_wav, cleanup_temp_files
 from backend.utils.logger import logger
@@ -112,13 +114,38 @@ async def process_audio(
             f"reply='{reply_text[:60]}'"
         )
 
-        # === STAGE 5: Text-to-Speech ===
-        # TODO Week 4: audio_path = tts_service.synthesize(reply_text, target_language)
-        audio_url = "/outputs/stub_response.mp3"
-        logger.info(f"  Stage 5 - TTS: stub audio")
+        # === STAGE 5: Text-to-Speech === [LIVE - Week 4]
+        voice_sample = persona.voice_sample_path if persona else None
+        tts_result = tts_service.synthesize(
+            text=reply_text,
+            language=detected_lang,
+            voice_sample_path=voice_sample,
+        )
 
-        # === Calculate processing time ===
+        audio_url = tts_result["audio_path"]
+        tts_mode = tts_result["mode"]
+        tts_time = tts_result["duration_ms"]
+
+        logger.info(
+            f"  Stage 5 - TTS: mode={tts_mode}, time={tts_time:.0f}ms, "
+            f"file={audio_url}"
+        )
+
+        # === STAGE 6: Save Conversation to Database === [NEW - Week 4]
         processing_time_ms = (time.time() - start_time) * 1000
+
+        if persona:
+            conversation = Conversation(
+                persona_id=persona.id,
+                transcript=transcript,
+                target_language=detected_lang,
+                reply_text=reply_text,
+                reply_audio_path=audio_url,
+                processing_time_ms=processing_time_ms,
+            )
+            db.add(conversation)
+            db.commit()
+            logger.info(f"  Stage 6 - Saved conversation id={conversation.id}")
 
         logger.info(f"  Pipeline complete in {processing_time_ms:.1f}ms")
 
