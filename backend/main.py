@@ -26,6 +26,7 @@ from backend.routes import health
 from backend.routes import process
 from backend.routes import personas
 from backend.routes import conversations
+from backend.routes import knowledge
 
 
 # --- Lifespan Event Handler ---
@@ -85,6 +86,7 @@ app.include_router(health.router)
 app.include_router(process.router)
 app.include_router(personas.router)
 app.include_router(conversations.router)
+app.include_router(knowledge.router)
 
 
 # --- Mount Static Files ---

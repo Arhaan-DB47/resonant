@@ -10,8 +10,9 @@ Week 2: STT is LIVE (faster-whisper)
 Week 3: LLM is LIVE (Ollama via Colab, with fallback mode)
 Week 4: TTS is LIVE (gTTS local, Coqui XTTS on Colab)
          Conversations saved to PostgreSQL
-Remaining stubs:
-    Week 5: RAG (ChromaDB)
+Week 5: RAG is LIVE (ChromaDB + sentence-transformers)
+
+ALL PIPELINE STAGES ARE NOW LIVE.
 """
 
 import time
@@ -24,6 +25,7 @@ from backend.database import get_db
 from backend.services.stt_service import stt_service
 from backend.services.llm_service import llm_service
 from backend.services.tts_service import tts_service
+from backend.services.rag_service import rag_service
 from backend.prompts.prompt_loader import build_system_prompt
 from backend.utils.audio_utils import save_upload, convert_to_wav, cleanup_temp_files
 from backend.utils.logger import logger
@@ -78,10 +80,9 @@ async def process_audio(
             f"time={stt_time:.0f}ms, text='{transcript[:60]}'"
         )
 
-        # === STAGE 3: RAG Retrieval (ChromaDB) ===
-        # TODO Week 5: context_chunks = rag_service.retrieve(transcript, persona_id)
-        context_chunks = []
-        logger.info(f"  Stage 3 - RAG: skipped (not connected yet)")
+        # === STAGE 3: RAG Retrieval (ChromaDB) === [LIVE - Week 5]
+        context_chunks = rag_service.retrieve(transcript, persona_id=persona_id)
+        logger.info(f"  Stage 3 - RAG: {len(context_chunks)} chunks retrieved")
 
         # === STAGE 4: LLM Persona Response === [LIVE - Week 3]
         # Load persona from database

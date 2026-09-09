@@ -1,0 +1,50 @@
+CS771 - Introduction to Machine Learning
+Course Syllabus and Exam Information
+Professor: Dr. Ayesha Sharma, IIT Delhi
+Semester: August-December 2026
+
+Course Overview:
+This course provides a comprehensive introduction to machine learning concepts, algorithms, and applications. Students will learn both the theoretical foundations and practical implementation of ML techniques.
+
+Prerequisites:
+- Linear Algebra (matrices, vectors, eigenvalues)
+- Probability and Statistics (Bayes' theorem, distributions)
+- Python programming (NumPy, Pandas, Matplotlib)
+
+Grading Policy:
+- Assignments (4 total): 40%
+- Mid-term Exam: 20%
+- Final Exam: 30%
+- Project: 10%
+
+Important Dates:
+- Mid-term Exam: October 15, 2026
+- Final Exam: December 10, 2026
+- Project Submission: December 5, 2026
+- Last Date to Drop: September 30, 2026
+
+Final Exam Details:
+The final exam covers chapters 5 through 10 of the course material, with a focus on machine learning algorithms and their computational complexity. The exam is open book, 3 hours duration. You may bring printed notes and textbooks, but no electronic devices are allowed. The exam will include both theoretical questions (proofs, derivations) and practical questions (algorithm design, code analysis).
+
+Topics covered in the final exam:
+1. Support Vector Machines and Kernel Methods
+2. Decision Trees and Random Forests
+3. Neural Networks and Backpropagation
+4. Convolutional Neural Networks (CNNs)
+5. Recurrent Neural Networks (RNNs) and LSTMs
+6. Regularization techniques (L1, L2, Dropout)
+
+Office Hours:
+Dr. Sharma holds office hours every Tuesday and Thursday from 2:00 PM to 4:00 PM in Room 301, Block V, CS Department. Students can also book appointments via email at ayesha.sharma@iitd.ac.in.
+
+Teaching Assistants:
+- Priya Mehta (priya.mehta@iitd.ac.in) - Tutorials on Wednesday
+- Rahul Verma (rahul.verma@iitd.ac.in) - Lab sessions on Friday
+
+Recommended Textbooks:
+1. "Pattern Recognition and Machine Learning" by Christopher Bishop
+2. "Deep Learning" by Ian Goodfellow, Yoshua Bengio, and Aaron Courville
+3. "Hands-On Machine Learning with Scikit-Learn, Keras, and TensorFlow" by Aurelien Geron
+
+Academic Integrity:
+All submitted work must be original. Plagiarism detection tools will be used to check assignments and projects. Students found violating the academic integrity policy will receive zero marks for the assignment and may face disciplinary action.
