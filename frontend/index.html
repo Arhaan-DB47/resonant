@@ -4,36 +4,127 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resonant — AI Digital Twin</title>
-    <style>
-        body {
-            font-family: system-ui, sans-serif;
-            background: #0a0f1e;
-            color: #e0e0e0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-        }
-        .container {
-            text-align: center;
-            padding: 2rem;
-        }
-        h1 { color: #ffffff; font-size: 2rem; }
-        p { color: #888; }
-        code {
-            background: #1a1f2e;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-    </style>
+    <link rel="stylesheet" href="/assets/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <h1>Resonant</h1>
-        <p>AI Digital Twin — Frontend coming in Week 6</p>
-        <p>API docs available at <code>/docs</code></p>
-    </div>
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+        <div class="header-left">
+            <h1 class="logo">Resonant</h1>
+            <span class="tagline">AI Digital Twin</span>
+        </div>
+        <div class="header-right">
+            <span id="status-indicator" class="status-dot offline" title="Checking..."></span>
+            <span id="status-text" class="status-text">Connecting...</span>
+        </div>
+    </header>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="container">
+
+        <!-- Persona Card -->
+        <section class="persona-card glass" id="persona-card">
+            <div class="persona-avatar" id="persona-avatar">?</div>
+            <div class="persona-info">
+                <h2 id="persona-name">Select a Persona</h2>
+                <p id="persona-role" class="persona-role">Choose a digital twin to talk to</p>
+                <p id="persona-institution" class="persona-institution"></p>
+            </div>
+        </section>
+
+        <!-- Controls Row -->
+        <section class="controls glass">
+            <div class="control-group">
+                <label for="persona-select">Persona</label>
+                <select id="persona-select" class="select">
+                    <option value="">Loading personas...</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="language-select">Language</label>
+                <select id="language-select" class="select">
+                    <option value="en">English</option>
+                    <option value="hi">Hindi</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="ja">Japanese</option>
+                    <option value="ta">Tamil</option>
+                    <option value="te">Telugu</option>
+                    <option value="bn">Bengali</option>
+                    <option value="ur">Urdu</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- Chat History -->
+        <section class="chat-container glass" id="chat-container">
+            <div class="chat-header">
+                <h3>Conversation</h3>
+                <button id="clear-chat-btn" class="btn-icon" title="Clear chat">&#x1f5d1;</button>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <div class="chat-empty" id="chat-empty">
+                    <p>Press and hold the microphone button to ask a question.</p>
+                    <p class="chat-empty-hint">Your conversation will appear here.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Record Button -->
+        <section class="recorder-section">
+            <button id="record-btn" class="record-btn" disabled title="Hold to record">
+                <svg class="mic-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                </svg>
+            </button>
+            <p class="record-hint" id="record-hint">Select a persona to start</p>
+            <div class="recording-indicator" id="recording-indicator">
+                <span class="pulse-dot"></span>
+                <span>Recording...</span>
+            </div>
+        </section>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loading-overlay">
+            <div class="loading-card glass">
+                <div class="spinner"></div>
+                <p class="loading-text" id="loading-text">Processing...</p>
+                <div class="loading-stages" id="loading-stages">
+                    <div class="stage" id="stage-stt">Transcribing speech...</div>
+                    <div class="stage" id="stage-rag">Searching documents...</div>
+                    <div class="stage" id="stage-llm">Generating reply...</div>
+                    <div class="stage" id="stage-tts">Synthesizing voice...</div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+        <div class="disclaimer">
+            <strong>AI Disclaimer:</strong> This is an AI-generated digital twin.
+            Responses are machine-generated and may not reflect the actual views of the real person.
+            All responses include an AI watermark. Not a substitute for real human interaction.
+        </div>
+        <div class="footer-info">
+            <span>Resonant v0.5</span>
+            <span>&middot;</span>
+            <span>Built by Arhaan Khan</span>
+        </div>
+    </footer>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="/assets/api.js"></script>
+    <script src="/assets/recorder.js"></script>
+    <script src="/assets/player.js"></script>
+    <script src="/assets/ui.js"></script>
 </body>
 </html>
