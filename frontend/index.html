@@ -57,7 +57,57 @@
                     <option value="ur">Urdu</option>
                 </select>
             </div>
+            <div class="control-group control-btn-group">
+                <label>&nbsp;</label>
+                <button id="create-persona-btn" class="btn-create" title="Create new persona">+ New</button>
+            </div>
         </section>
+
+        <!-- Create Persona Modal -->
+        <div class="modal-overlay" id="create-persona-modal">
+            <div class="modal glass">
+                <div class="modal-header">
+                    <h3>Create New Persona</h3>
+                    <button class="btn-icon modal-close" id="modal-close-btn">&times;</button>
+                </div>
+                <form id="create-persona-form" class="modal-form">
+                    <div class="form-group">
+                        <label for="cp-name">Name <span class="required">*</span></label>
+                        <input type="text" id="cp-name" class="input" placeholder="e.g. Dr. Ayesha Sharma" required maxlength="100">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cp-role">Role</label>
+                            <input type="text" id="cp-role" class="input" placeholder="e.g. Professor of Computer Science">
+                        </div>
+                        <div class="form-group">
+                            <label for="cp-institution">Institution</label>
+                            <input type="text" id="cp-institution" class="input" placeholder="e.g. IIT Delhi">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="cp-personality">Personality Traits <span class="hint">(comma-separated)</span></label>
+                        <input type="text" id="cp-personality" class="input" placeholder="e.g. Patient, Uses analogies, Encouraging">
+                    </div>
+                    <div class="form-group">
+                        <label for="cp-knowledge">Knowledge Areas <span class="hint">(comma-separated)</span></label>
+                        <input type="text" id="cp-knowledge" class="input" placeholder="e.g. Machine Learning, Cloud Computing, Python">
+                    </div>
+                    <div class="form-group">
+                        <label for="cp-style">Speaking Style</label>
+                        <input type="text" id="cp-style" class="input" placeholder="e.g. Conversational but academic">
+                    </div>
+                    <div class="form-group">
+                        <label for="cp-constraints">Constraints <span class="hint">(comma-separated)</span></label>
+                        <input type="text" id="cp-constraints" class="input" placeholder="e.g. Never give direct exam answers, Always cite sources">
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" id="modal-cancel-btn">Cancel</button>
+                        <button type="submit" class="btn-primary">Create Persona</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         <!-- Chat History -->
         <section class="chat-container glass" id="chat-container">

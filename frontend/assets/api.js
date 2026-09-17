@@ -66,6 +66,26 @@ const API = {
     },
 
     /**
+     * Create a new persona.
+     * @param {Object} personaData - {name, role, institution, personality_traits, ...}
+     * @returns {Promise<{id, name, role, ...}>}
+     */
+    async createPersona(personaData) {
+        const res = await fetch(`${this.BASE}/personas`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(personaData),
+        });
+
+        if (!res.ok) {
+            const error = await res.json().catch(() => ({ detail: 'Unknown error' }));
+            throw new Error(error.detail || `Failed to create persona: ${res.status}`);
+        }
+
+        return res.json();
+    },
+
+    /**
      * Get conversation history for a persona.
      * @param {number} personaId
      * @param {number} limit

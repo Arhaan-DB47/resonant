@@ -39,11 +39,29 @@ const UI = {
             loadingText: document.getElementById('loading-text'),
             statusDot: document.getElementById('status-indicator'),
             statusText: document.getElementById('status-text'),
+            // Create Persona Modal
+            createPersonaBtn: document.getElementById('create-persona-btn'),
+            createModal: document.getElementById('create-persona-modal'),
+            createForm: document.getElementById('create-persona-form'),
+            modalCloseBtn: document.getElementById('modal-close-btn'),
+            modalCancelBtn: document.getElementById('modal-cancel-btn'),
         };
 
         // Bind events
         this.dom.personaSelect.addEventListener('change', () => this.onPersonaChange());
         this.dom.clearChatBtn.addEventListener('click', () => this.clearChat());
+
+        // Create Persona modal events
+        this.dom.createPersonaBtn.addEventListener('click', () => this.openCreateModal());
+        this.dom.modalCloseBtn.addEventListener('click', () => this.closeCreateModal());
+        this.dom.modalCancelBtn.addEventListener('click', () => this.closeCreateModal());
+        this.dom.createModal.addEventListener('click', (e) => {
+            if (e.target === this.dom.createModal) this.closeCreateModal();
+        });
+        this.dom.createForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.submitCreatePersona();
+        });
 
         // Record button: mousedown/mouseup for hold-to-record
         this.dom.recordBtn.addEventListener('mousedown', (e) => { e.preventDefault(); this.startRecording(); });
@@ -390,6 +408,70 @@ const UI = {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    },
+
+    // --- Create Persona Modal ---
+
+    openCreateModal() {
+        this.dom.createModal.classList.add('visible');
+        document.getElementById('cp-name').focus();
+    },
+
+    closeCreateModal() {
+        this.dom.createModal.classList.remove('visible');
+        this.dom.createForm.reset();
+    },
+
+    /**
+     * Parse a comma-separated string into a trimmed array.
+     * "Patient, Uses analogies, Encouraging" → ["Patient", "Uses analogies", "Encouraging"]
+     */
+    _parseCommaSeparated(value) {
+        if (!value || !value.trim()) return [];
+        return value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    },
+
+    async submitCreatePersona() {
+        const name = document.getElementById('cp-name').value.trim();
+        if (!name) {
+            this.showToast('Name is required', 'error');
+            return;
+        }
+
+        // Build the persona data object
+        const personaData = {
+            name: name,
+            role: document.getElementById('cp-role').value.trim() || null,
+            institution: document.getElementById('cp-institution').value.trim() || null,
+            personality_traits: this._parseCommaSeparated(document.getElementById('cp-personality').value),
+            knowledge_areas: this._parseCommaSeparated(document.getElementById('cp-knowledge').value),
+            speaking_style: document.getElementById('cp-style').value.trim() || null,
+            constraints: this._parseCommaSeparated(document.getElementById('cp-constraints').value),
+        };
+
+        // Disable submit button while creating
+        const submitBtn = this.dom.createForm.querySelector('.btn-primary');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating...';
+
+        try {
+            const created = await API.createPersona(personaData);
+
+            this.showToast(`Persona "${created.name}" created!`, 'success');
+            this.closeCreateModal();
+
+            // Reload personas and auto-select the new one
+            await this.loadPersonas();
+            this.dom.personaSelect.value = created.id;
+            this.onPersonaChange();
+
+        } catch (err) {
+            console.error('[UI] Failed to create persona:', err);
+            this.showToast(`Failed: ${err.message}`, 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Persona';
+        }
     },
 };
 
