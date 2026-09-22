@@ -45,6 +45,10 @@ const UI = {
             createForm: document.getElementById('create-persona-form'),
             modalCloseBtn: document.getElementById('modal-close-btn'),
             modalCancelBtn: document.getElementById('modal-cancel-btn'),
+            // Knowledge Upload
+            personaActions: document.getElementById('persona-actions'),
+            knowledgeUpload: document.getElementById('knowledge-upload'),
+            knowledgeBadge: document.getElementById('knowledge-badge'),
         };
 
         // Bind events
@@ -61,6 +65,11 @@ const UI = {
         this.dom.createForm.addEventListener('submit', (e) => {
             e.preventDefault();
             this.submitCreatePersona();
+        });
+
+        // Knowledge upload
+        this.dom.knowledgeUpload.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) this.uploadKnowledge(e.target.files[0]);
         });
 
         // Record button: mousedown/mouseup for hold-to-record
@@ -158,6 +167,7 @@ const UI = {
             this.dom.personaAvatar.textContent = '?';
             this.dom.recordBtn.disabled = true;
             this.dom.recordHint.textContent = 'Select a persona to start';
+            this.dom.personaActions.style.display = 'none';
             return;
         }
 
@@ -175,6 +185,10 @@ const UI = {
         // Enable recording
         this.dom.recordBtn.disabled = false;
         this.dom.recordHint.textContent = 'Hold to record your question';
+
+        // Show upload button and load knowledge doc count
+        this.dom.personaActions.style.display = 'flex';
+        this.loadKnowledgeCount(id);
 
         // Initialize recorder if not done yet
         if (!Recorder.stream) {
@@ -408,6 +422,56 @@ const UI = {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    },
+
+    // --- Knowledge Upload ---
+
+    /**
+     * Load and display the knowledge document count for a persona.
+     */
+    async loadKnowledgeCount(personaId) {
+        try {
+            const docs = await API.getKnowledge(personaId);
+            const count = docs.length;
+            this.dom.knowledgeBadge.textContent = `${count} doc${count !== 1 ? 's' : ''}`;
+        } catch (err) {
+            this.dom.knowledgeBadge.textContent = '0 docs';
+        }
+    },
+
+    /**
+     * Upload a knowledge document for the selected persona.
+     */
+    async uploadKnowledge(file) {
+        if (!this.selectedPersonaId) {
+            this.showToast('Select a persona first', 'error');
+            return;
+        }
+
+        // Validate file
+        if (file.size > 5 * 1024 * 1024) {
+            this.showToast('File too large (max 5 MB)', 'error');
+            return;
+        }
+
+        this.showToast(`Uploading "${file.name}"...`, 'info');
+
+        try {
+            const result = await API.uploadKnowledge(this.selectedPersonaId, file);
+            this.showToast(
+                `"${file.name}" uploaded — ${result.chunk_count} chunks indexed`,
+                'success'
+            );
+
+            // Refresh doc count
+            this.loadKnowledgeCount(this.selectedPersonaId);
+        } catch (err) {
+            console.error('[UI] Upload failed:', err);
+            this.showToast(`Upload failed: ${err.message}`, 'error');
+        }
+
+        // Reset file input so same file can be uploaded again
+        this.dom.knowledgeUpload.value = '';
     },
 
     // --- Create Persona Modal ---

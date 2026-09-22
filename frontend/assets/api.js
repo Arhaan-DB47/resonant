@@ -96,4 +96,39 @@ const API = {
         if (!res.ok) throw new Error(`Failed to load history: ${res.status}`);
         return res.json();
     },
+
+    /**
+     * Upload a knowledge document for a persona.
+     * @param {number} personaId
+     * @param {File} file - The text file to upload
+     * @returns {Promise<{message, chunk_count}>}
+     */
+    async uploadKnowledge(personaId, file) {
+        const formData = new FormData();
+        formData.append('document', file);
+        formData.append('title', file.name.replace(/\.[^.]+$/, '')); // filename without extension
+
+        const res = await fetch(`${this.BASE}/personas/${personaId}/knowledge`, {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!res.ok) {
+            const error = await res.json().catch(() => ({ detail: 'Unknown error' }));
+            throw new Error(error.detail || `Upload failed: ${res.status}`);
+        }
+
+        return res.json();
+    },
+
+    /**
+     * List knowledge documents for a persona.
+     * @param {number} personaId
+     * @returns {Promise<Array<{id, title, doc_type, chunk_count}>>}
+     */
+    async getKnowledge(personaId) {
+        const res = await fetch(`${this.BASE}/personas/${personaId}/knowledge`);
+        if (!res.ok) throw new Error(`Failed to load knowledge: ${res.status}`);
+        return res.json();
+    },
 };

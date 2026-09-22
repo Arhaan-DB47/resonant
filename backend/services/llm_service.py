@@ -51,6 +51,12 @@ class LLMService:
     # Request timeout (seconds) — LLMs can be slow on first inference
     TIMEOUT = 120
 
+    # Headers required for ngrok free tier (bypasses browser warning page)
+    NGROK_HEADERS = {
+        "ngrok-skip-browser-warning": "true",
+        "User-Agent": "Resonant/1.0",
+    }
+
     def __init__(self):
         self._available: Optional[bool] = None
 
@@ -67,7 +73,7 @@ class LLMService:
         """
         try:
             url = self._get_base_url()
-            response = requests.get(url, timeout=5)
+            response = requests.get(url, timeout=5, headers=self.NGROK_HEADERS)
             self._available = response.status_code == 200
         except (requests.ConnectionError, requests.Timeout):
             self._available = False
@@ -79,7 +85,7 @@ class LLMService:
         """List available models on the Ollama server."""
         try:
             url = f"{self._get_base_url()}/api/tags"
-            response = requests.get(url, timeout=10)
+            response = requests.get(url, timeout=10, headers=self.NGROK_HEADERS)
             if response.status_code == 200:
                 data = response.json()
                 return [m["name"] for m in data.get("models", [])]
@@ -147,7 +153,7 @@ class LLMService:
 
         try:
             start = time.time()
-            response = requests.post(url, json=payload, timeout=self.TIMEOUT)
+            response = requests.post(url, json=payload, timeout=self.TIMEOUT, headers=self.NGROK_HEADERS)
             duration_ms = (time.time() - start) * 1000
 
             if response.status_code != 200:
