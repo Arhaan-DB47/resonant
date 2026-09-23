@@ -193,7 +193,7 @@ class TestPipelineWithLLM:
         assert data["processing_time_ms"] > 0
 
     def test_pipeline_with_invalid_persona(self, test_audio_bytes):
-        """Should handle non-existent persona gracefully."""
+        """Should return 404 for non-existent persona."""
         from fastapi.testclient import TestClient
         from backend.main import app
 
@@ -205,6 +205,6 @@ class TestPipelineWithLLM:
             data={"target_language": "en", "persona_id": "9999"},
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 404
         data = response.json()
-        assert "not found" in data["reply_text"].lower()
+        assert "not found" in data["detail"].lower()

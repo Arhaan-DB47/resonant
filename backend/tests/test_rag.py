@@ -126,12 +126,15 @@ class TestIngestion:
 class TestRAGRetrieval:
     """Tests for the RAG retrieval service."""
 
-    @pytest.fixture(scope="class", autouse=True)
+    @pytest.fixture(autouse=True)
     def ingest_test_docs(self):
-        """Ingest sample docs before tests, clean up after."""
+        """Ingest sample docs before each test, clean up after."""
         from rag.ingest import ingest_document, delete_persona_documents
 
         test_persona_id = 9995
+
+        # Clean up any leftover data from previous runs
+        delete_persona_documents(test_persona_id)
 
         # Create and ingest a test document
         path = os.path.join(tempfile.gettempdir(), "resonant_rag_test.txt")
