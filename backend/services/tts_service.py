@@ -174,23 +174,16 @@ class TTSService:
         try:
             relative_url, absolute_path = self._generate_filename("mp3")
 
-            # edge-tts is async, run it in an event loop
-            async def _generate():
-                communicate = edge_tts.Communicate(text, voice)
-                await communicate.save(absolute_path)
+            # edge-tts is async — run it in a separate thread with its own event loop
+            # to avoid "cannot call asyncio.run() from a running event loop" in FastAPI
+            import concurrent.futures
 
-            # Use existing loop if available, otherwise create new one
-            try:
-                loop = asyncio.get_running_loop()
-                # We're inside an async context (FastAPI), run in executor
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as pool:
-                    loop.run_in_executor(pool, lambda: asyncio.run(_generate()))
-                    # Actually, simpler: just use asyncio.run in a thread
-                    # But since we might be in async context, let's just use asyncio.run
-                    raise RuntimeError("Use sync path")
-            except RuntimeError:
-                asyncio.run(_generate())
+            def _run_edge_tts():
+                asyncio.run(edge_tts.Communicate(text, voice).save(absolute_path))
+
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                future = pool.submit(_run_edge_tts)
+                future.result(timeout=30)  # Wait up to 30 seconds
 
             duration_ms = (time.time() - start) * 1000
 
