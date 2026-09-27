@@ -72,14 +72,15 @@ const UI = {
             if (e.target.files.length > 0) this.uploadKnowledge(e.target.files[0]);
         });
 
-        // Record button: mousedown/mouseup for hold-to-record
-        this.dom.recordBtn.addEventListener('mousedown', (e) => { e.preventDefault(); this.startRecording(); });
-        this.dom.recordBtn.addEventListener('mouseup', () => this.stopRecording());
-        this.dom.recordBtn.addEventListener('mouseleave', () => { if (Recorder.isRecording) this.stopRecording(); });
-
-        // Touch support for mobile
-        this.dom.recordBtn.addEventListener('touchstart', (e) => { e.preventDefault(); this.startRecording(); });
-        this.dom.recordBtn.addEventListener('touchend', (e) => { e.preventDefault(); this.stopRecording(); });
+        // Record button: click to toggle recording
+        this.dom.recordBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (Recorder.isRecording) {
+                this.stopRecording();
+            } else {
+                this.startRecording();
+            }
+        });
 
         // Load data
         await this.checkHealth();
@@ -184,7 +185,7 @@ const UI = {
 
         // Enable recording
         this.dom.recordBtn.disabled = false;
-        this.dom.recordHint.textContent = 'Hold to record your question';
+        this.dom.recordHint.textContent = 'Click to record your question';
 
         // Show upload button and load knowledge doc count
         this.dom.personaActions.style.display = 'flex';
@@ -211,7 +212,7 @@ const UI = {
         Recorder.start();
         this.dom.recordBtn.classList.add('recording');
         this.dom.recordingIndicator.classList.add('visible');
-        this.dom.recordHint.textContent = 'Release to send';
+        this.dom.recordHint.textContent = 'Click again to stop';
     },
 
     /**
@@ -222,7 +223,7 @@ const UI = {
 
         this.dom.recordBtn.classList.remove('recording');
         this.dom.recordingIndicator.classList.remove('visible');
-        this.dom.recordHint.textContent = 'Hold to record your question';
+        this.dom.recordHint.textContent = 'Click to record your question';
 
         const audioBlob = await Recorder.stop();
         if (!audioBlob || audioBlob.size < 1000) {

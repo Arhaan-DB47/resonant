@@ -20,8 +20,9 @@ alembic>=1.13.0                    # Database migrations
 pydub>=0.25.1                      # Format conversion (requires ffmpeg)
 audioop-lts>=0.2.2                 # Python 3.13+ compatibility shim for pydub
 
-# Text-to-Speech (lightweight, runs on CPU)
-gTTS>=2.5.0                        # Free fallback TTS (no cloning)
+# Text-to-Speech
+edge-tts>=6.1.0                     # Microsoft Neural TTS (natural voices, free)
+gTTS>=2.5.0                        # Google TTS fallback (robotic but reliable)
 
 # Configuration
 pydantic-settings>=2.2.0

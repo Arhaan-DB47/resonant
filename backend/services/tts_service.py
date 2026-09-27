@@ -4,13 +4,15 @@ tts_service.py -- Text-to-Speech Service
 Converts the LLM's text reply into an audio file that the user can listen to.
 Supports two modes:
 
-1. gTTS (default, local) — Uses Google's free TTS API
-   - Pros: Free, supports 50+ languages, no GPU needed
-   - Cons: Requires internet, robotic voice, no voice cloning
+1. Edge TTS (default, local) — Microsoft's Neural TTS engine
+   - Pros: Free, natural-sounding neural voices, 300+ voices, 75+ languages
+   - Cons: Requires internet connection
 
 2. Coqui XTTS (Colab) — Deep learning TTS with voice cloning
-   - Pros: Natural voice, can clone the real person's voice
-   - Cons: Needs GPU, runs on Colab via ngrok
+   - Pros: Can clone the real person's voice
+   - Cons: Needs GPU, runs on Colab, Python 3.13 incompatible
+
+Fallback: gTTS (Google Translate TTS) — used if Edge TTS fails
 
 Usage:
     from backend.services.tts_service import tts_service
@@ -18,16 +20,19 @@ Usage:
     result = tts_service.synthesize("Hello, how are you?", language="en")
     print(result["audio_path"])    # "/outputs/response_20260902_abc123.mp3"
     print(result["duration_ms"])   # 340.5
-    print(result["mode"])          # "gtts" or "coqui_xtts"
+    print(result["mode"])          # "edge_tts" or "coqui_xtts" or "gtts"
 """
 
 import os
+import re
 import time
 import uuid
+import asyncio
 from pathlib import Path
 from typing import Optional
 
 import requests
+import edge_tts
 from gtts import gTTS
 
 from backend.config import settings
@@ -37,13 +42,38 @@ from backend.utils.logger import logger
 # Output directory for generated audio files
 OUTPUTS_DIR = Path("outputs")
 
+# Map language codes to Edge TTS voice names
+# These are high-quality neural voices that sound natural
+EDGE_VOICE_MAP = {
+    "en": "en-US-AriaNeural",         # American English (female, natural)
+    "hi": "hi-IN-SwaraNeural",         # Hindi (female)
+    "es": "es-ES-ElviraNeural",        # Spanish (female)
+    "fr": "fr-FR-DeniseNeural",        # French (female)
+    "de": "de-DE-KatjaNeural",         # German (female)
+    "ja": "ja-JP-NanamiNeural",        # Japanese (female)
+    "ta": "ta-IN-PallaviNeural",       # Tamil (female)
+    "te": "te-IN-ShrutiNeural",        # Telugu (female)
+    "bn": "bn-IN-TanishaaNeural",      # Bengali (female)
+    "ur": "ur-PK-UzmaNeural",          # Urdu (female)
+    "zh": "zh-CN-XiaoxiaoNeural",      # Chinese Mandarin (female)
+    "ko": "ko-KR-SunHiNeural",         # Korean (female)
+    "ar": "ar-SA-ZariyahNeural",       # Arabic (female)
+    "pt": "pt-BR-FranciscaNeural",     # Portuguese (female)
+    "ru": "ru-RU-SvetlanaNeural",      # Russian (female)
+    "it": "it-IT-ElsaNeural",          # Italian (female)
+}
+
+# Default voice when language not in map
+DEFAULT_VOICE = "en-US-AriaNeural"
+
 
 class TTSService:
     """
-    Text-to-Speech service with dual-mode support.
+    Text-to-Speech service with Edge TTS neural voices.
 
-    Mode 1 (gTTS): Free, works immediately, robotic voice
-    Mode 2 (Coqui XTTS): Natural voice via Colab, requires setup
+    Primary: Edge TTS (natural neural voices, free)
+    Fallback: gTTS (robotic but reliable)
+    Optional: Coqui XTTS on Colab (voice cloning)
     """
 
     def synthesize(
@@ -65,7 +95,7 @@ class TTSService:
                 - audio_path (str): Relative URL path to the audio file
                 - audio_file (str): Absolute filesystem path
                 - duration_ms (float): Time taken to synthesize
-                - mode (str): "gtts" or "coqui_xtts"
+                - mode (str): "edge_tts" or "coqui_xtts" or "gtts"
         """
         if not text or not text.strip():
             raise ValueError("Cannot synthesize empty text")
@@ -78,9 +108,15 @@ class TTSService:
             try:
                 return self._synthesize_coqui(clean_text, language, voice_sample_path)
             except Exception as e:
-                logger.warning(f"Coqui XTTS failed, falling back to gTTS: {e}")
+                logger.warning(f"Coqui XTTS failed, falling back to Edge TTS: {e}")
 
-        # Default: use gTTS
+        # Primary: Edge TTS (natural neural voices)
+        try:
+            return self._synthesize_edge(clean_text, language)
+        except Exception as e:
+            logger.warning(f"Edge TTS failed, falling back to gTTS: {e}")
+
+        # Fallback: gTTS (robotic but reliable)
         return self._synthesize_gtts(clean_text, language)
 
     def _clean_text(self, text: str) -> str:
@@ -92,8 +128,6 @@ class TTSService:
         - Markdown formatting
         - Multiple newlines
         """
-        import re
-
         # Remove watermark brackets
         cleaned = re.sub(r"\[.*?\]", "", text)
         # Remove markdown bold/italic
@@ -125,9 +159,62 @@ class TTSService:
 
         return relative_url, absolute_path
 
+    def _synthesize_edge(self, text: str, language: str) -> dict:
+        """
+        Synthesize speech using Microsoft Edge TTS neural voices.
+
+        Uses the edge-tts library which accesses Microsoft's free
+        neural TTS service — the same voices used in Edge browser's
+        Read Aloud feature. Much more natural than gTTS.
+        """
+        start = time.time()
+
+        voice = EDGE_VOICE_MAP.get(language, DEFAULT_VOICE)
+
+        try:
+            relative_url, absolute_path = self._generate_filename("mp3")
+
+            # edge-tts is async, run it in an event loop
+            async def _generate():
+                communicate = edge_tts.Communicate(text, voice)
+                await communicate.save(absolute_path)
+
+            # Use existing loop if available, otherwise create new one
+            try:
+                loop = asyncio.get_running_loop()
+                # We're inside an async context (FastAPI), run in executor
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    loop.run_in_executor(pool, lambda: asyncio.run(_generate()))
+                    # Actually, simpler: just use asyncio.run in a thread
+                    # But since we might be in async context, let's just use asyncio.run
+                    raise RuntimeError("Use sync path")
+            except RuntimeError:
+                asyncio.run(_generate())
+
+            duration_ms = (time.time() - start) * 1000
+
+            file_size = os.path.getsize(absolute_path)
+            logger.info(
+                f"Edge TTS synthesis complete: voice={voice}, lang={language}, "
+                f"chars={len(text)}, size={file_size / 1024:.1f}KB, "
+                f"time={duration_ms:.0f}ms"
+            )
+
+            return {
+                "audio_path": relative_url,
+                "audio_file": absolute_path,
+                "duration_ms": round(duration_ms, 1),
+                "mode": "edge_tts",
+            }
+
+        except Exception as e:
+            logger.error(f"Edge TTS failed: {str(e)}")
+            raise RuntimeError(f"Edge TTS synthesis failed: {str(e)}") from e
+
     def _synthesize_gtts(self, text: str, language: str) -> dict:
         """
-        Synthesize speech using Google's free TTS API.
+        Synthesize speech using Google's free TTS API (fallback).
 
         gTTS supports 50+ languages. The voice is robotic but functional.
         Requires an internet connection.
@@ -149,7 +236,7 @@ class TTSService:
 
             file_size = os.path.getsize(absolute_path)
             logger.info(
-                f"gTTS synthesis complete: lang={language}, "
+                f"gTTS synthesis complete (fallback): lang={language}, "
                 f"chars={len(text)}, size={file_size / 1024:.1f}KB, "
                 f"time={duration_ms:.0f}ms"
             )
