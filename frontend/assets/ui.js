@@ -227,7 +227,7 @@ const UI = {
 
         const audioBlob = await Recorder.stop();
         if (!audioBlob || audioBlob.size < 1000) {
-            this.showToast('Recording too short. Hold the button longer.', 'info');
+            this.showToast('Recording too short. Speak for at least 1-2 seconds.', 'info');
             return;
         }
 
@@ -265,9 +265,21 @@ const UI = {
             // Add the conversation to the chat
             this.addChatPair(result);
 
-            // Auto-play the response audio
+            // Auto-play the response via the inline chat player (not a hidden Audio object)
             if (result.audio_url) {
-                Player.play(result.audio_url);
+                // Stop any previously playing audio
+                Player.stop();
+                this.stopAllInlinePlayers();
+
+                // Find the inline <audio> element we just added and play it
+                const lastBubbleAudio = this.dom.chatMessages.querySelector(
+                    '.chat-pair:last-child .bubble-audio audio'
+                );
+                if (lastBubbleAudio) {
+                    lastBubbleAudio.play().catch(err => {
+                        console.warn('[UI] Autoplay blocked:', err.message);
+                    });
+                }
             }
 
             this.showToast(
@@ -318,7 +330,8 @@ const UI = {
         if (result.audio_url) {
             aiContent += `
                 <div class="bubble-audio">
-                    <audio controls preload="metadata" src="${result.audio_url}"></audio>
+                    <audio controls preload="metadata" src="${result.audio_url}"
+                           onplay="Player.stop(); UI.stopAllInlinePlayers(this)"></audio>
                 </div>
             `;
         }
@@ -357,7 +370,7 @@ const UI = {
         empty.className = 'chat-empty';
         empty.id = 'chat-empty';
         empty.innerHTML = `
-            <p>Press and hold the microphone button to ask a question.</p>
+            <p>Click the microphone button to start recording your question.</p>
             <p class="chat-empty-hint">Your conversation will appear here.</p>
         `;
         this.dom.chatMessages.appendChild(empty);
@@ -418,6 +431,21 @@ const UI = {
     },
 
     // --- Helpers ---
+
+    /**
+     * Stop all inline <audio> players in chat bubbles, except the one passed in.
+     * Also stops the global Player autoplay audio.
+     * @param {HTMLAudioElement|null} except - The audio element to keep playing
+     */
+    stopAllInlinePlayers(except = null) {
+        const allPlayers = this.dom.chatMessages.querySelectorAll('.bubble-audio audio');
+        allPlayers.forEach(audio => {
+            if (audio !== except) {
+                audio.pause();
+                audio.currentTime = 0;
+            }
+        });
+    },
 
     escapeHtml(text) {
         const div = document.createElement('div');
