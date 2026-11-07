@@ -1,0 +1,26 @@
+# render.yaml — Render.com deployment blueprint
+# This file tells Render how to build and run Resonant
+
+services:
+  - type: web
+    name: resonant
+    runtime: docker
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: resonant-db
+          property: connectionURI
+      - key: GROQ_API_KEY
+        sync: false  # Set manually in Render dashboard
+      - key: LLM_MODE
+        value: groq
+      - key: WHISPER_MODEL_SIZE
+        value: tiny
+      - key: LOG_LEVEL
+        value: INFO
+
+databases:
+  - name: resonant-db
+    plan: free
+    databaseName: resonant

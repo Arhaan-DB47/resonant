@@ -18,7 +18,7 @@ alembic>=1.13.0                    # Database migrations
 
 # Audio Processing
 pydub>=0.25.1                      # Format conversion (requires ffmpeg)
-audioop-lts>=0.2.2                 # Python 3.13+ compatibility shim for pydub
+audioop-lts>=0.2.2; python_version>="3.13"  # Python 3.13+ compatibility shim for pydub
 
 # Text-to-Speech
 edge-tts>=6.1.0                     # Microsoft Neural TTS (natural voices, free)

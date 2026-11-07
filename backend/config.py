@@ -43,6 +43,16 @@ class Settings(BaseSettings):
         description="URL of the Coqui XTTS API (Colab via ngrok)",
     )
 
+    # === Groq Cloud LLM (free Llama 3.1 API — used in deployment) ===
+    groq_api_key: str = Field(
+        default="",
+        description="Groq API key for cloud LLM inference (get free at console.groq.com)",
+    )
+    llm_mode: str = Field(
+        default="auto",
+        description="LLM mode: 'ollama', 'groq', or 'auto' (tries groq first, then ollama, then fallback)",
+    )
+
     # === Local STT Model ===
     whisper_model_size: str = Field(
         default="tiny",
