@@ -26,6 +26,14 @@ if not DATABASE_URL:
         "Create a .env file with DATABASE_URL=postgresql://user:password@localhost:5432/resonant"
     )
 
+# Fix connection string for compatibility:
+# 1. Render uses "postgres://" but SQLAlchemy 2.x requires "postgresql://"
+# 2. Force psycopg2 driver (we have psycopg2-binary installed, not psycopg v3)
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+elif DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+
 # Create the SQLAlchemy engine
 # - The engine manages the actual database connection pool
 # - echo=True prints all SQL statements to the console (helpful for learning, disable in production)
